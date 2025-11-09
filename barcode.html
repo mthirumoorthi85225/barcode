@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Barcode Scanner App</title>
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+</head>
+<body>
+  <h2>📷 Barcode Scanner</h2>
+
+  <!-- Camera preview -->
+  <div id="reader" style="width:300px;"></div>
+
+  <h3>📋 Scanned Data</h3>
+  <table border="1" id="dataTable">
+    <tr><th>#</th><th>Barcode Text</th></tr>
+  </table>
+
+  <script>
+    let counter = 1;
+
+    function onScanSuccess(decodedText, decodedResult) {
+      // Insert the scanned text into the table
+      let table = document.getElementById("dataTable");
+      let row = table.insertRow(-1);
+      let cell1 = row.insertCell(0);
+      let cell2 = row.insertCell(1);
+      cell1.innerHTML = counter++;
+      cell2.innerHTML = decodedText;
+    }
+
+    function onScanError(errorMessage) {
+      // Ignore scan errors or show them in console
+      console.log(errorMessage);
+    }
+
+    // Initialize the scanner
+    let html5QrcodeScanner = new Html5QrcodeScanner(
+      "reader",
+      { fps: 10, qrbox: 250 }
+    );
+    html5QrcodeScanner.render(onScanSuccess, onScanError);
+  </script>
+</body>
+</html>
