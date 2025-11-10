@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Barcode Scanner - 1 Minute Cooldown per Code</title>
+  <title>Continuous Barcode Scanner - Skip Same Code for 1 Minute</title>
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <style>
     body {
@@ -13,9 +13,8 @@
       margin: 0;
       padding: 20px;
     }
-    #reader {
-      width: 320px;
-      margin: 20px auto;
+    h2 {
+      margin-bottom: 10px;
     }
     #enableSoundBtn {
       margin: 10px;
@@ -29,6 +28,10 @@
     }
     #enableSoundBtn:hover {
       background-color: #0056b3;
+    }
+    #reader {
+      width: 320px;
+      margin: 20px auto;
     }
     table {
       border-collapse: collapse;
@@ -67,7 +70,7 @@
   </style>
 </head>
 <body>
-  <h2>📦 Pickup Barcode Scanner</h2>
+  <h2>📦 Continuous Pickup Barcode Scanner</h2>
 
   <button id="enableSoundBtn">🔊 Enable Sound</button>
   <p style="font-size:13px;color:gray;">Tap once to allow sound (required on iPhone)</p>
@@ -83,8 +86,9 @@
   <script>
     let scanCount = 0;
     let soundEnabled = false;
-    let lastScanTimes = {}; // store timestamps per barcode text
+    let lastScanTimes = {}; // stores timestamp of each barcode
 
+    // Function to speak aloud
     function speakText(name) {
       if (!soundEnabled || !name) return;
       const msg = new SpeechSynthesisUtterance(`${name} pickup is ready`);
@@ -93,29 +97,16 @@
       speechSynthesis.speak(msg);
     }
 
-    function onScanSuccess(decodedText, decodedResult) {
+    // When barcode is successfully scanned
+    function onScanSuccess(decodedText) {
       const now = Date.now();
       const lastTime = lastScanTimes[decodedText];
 
-      // Ignore same barcode if scanned again within 1 minute
+      // Skip if same code scanned within 1 minute
       if (lastTime && now - lastTime < 60000) {
         document.getElementById("status").innerText =
-          `⏳ '${decodedText}' scanned recently — waiting 1 min...`;
+          `⏳ '${decodedText}' scanned recently — ignoring (wait 1 min)`;
         return;
       }
 
-      // Record scan time
-      lastScanTimes[decodedText] = now;
-
-      // Speak name
-      speakText(decodedText);
-
-      // Add new row
-      const table = document.getElementById("dataTable");
-      const row = table.insertRow(-1);
-      const cell1 = row.insertCell(0);
-      const cell2 = row.insertCell(1);
-      const cell3 = row.insertCell(2);
-
-      scanCount++;
-      cell1.
+      // Save current scan time
