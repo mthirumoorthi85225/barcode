@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Continuous Barcode Scanner with 1-min Skip</title>
+  <title>Continuous Barcode Scanner</title>
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <style>
-    body { font-family: Arial, sans-serif; text-align: center; margin: 20px; background: #f7f7f7; }
+    body { font-family: Arial, sans-serif; text-align: center; background: #f7f7f7; margin: 0; padding: 20px; }
     #reader { width: 320px; margin: 20px auto; }
     table { border-collapse: collapse; margin: 20px auto; width: 90%; max-width: 500px; background: white; }
     th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
@@ -23,13 +23,11 @@
 
 <h2>📦 Continuous Pickup Barcode Scanner</h2>
 
-
+<button id="enableSoundBtn">🔊 Enable Sound</button>
+<p style="font-size:13px;color:gray;">Tap once to allow sound (required on iPhone)</p>
 
 <div id="reader"></div>
 <p id="status">✅ Ready to scan...</p>
-
-  <button id="enableSoundBtn">🔊 Enable Sound</button>
-<p style="font-size:13px;color:gray;">Tap once to allow sound (required on iPhone)</p>
 
 <h3>Scanned Names</h3>
 <table id="dataTable">
@@ -39,7 +37,6 @@
 <script>
 let scanCount = 0;
 let soundEnabled = false;
-const lastScanTimes = {}; // store last scan time per barcode
 
 // speak aloud
 function speakText(name) {
@@ -52,61 +49,5 @@ function speakText(name) {
 
 // handle scan
 function onScanSuccess(decodedText) {
-  const now = Date.now();
-  const lastTime = lastScanTimes[decodedText] || 0;
-
-  // ignore if scanned in last 60 seconds
-  if (now - lastTime < 60000) {
-    document.getElementById("status").innerText = `⏳ '${decodedText}' scanned recently — ignoring`;
-    return;
-  }
-
-  lastScanTimes[decodedText] = now;
-
-  // speak name
-  speakText(decodedText);
-
-  // add to table
-  const table = document.getElementById("dataTable");
-  const row = table.insertRow(-1);
-  const cell1 = row.insertCell(0);
-  const cell2 = row.insertCell(1);
-  const cell3 = row.insertCell(2);
-
-  scanCount++;
-  cell1.innerText = scanCount;
-  cell2.innerText = decodedText;
-
-  const btn = document.createElement("button");
-  btn.textContent = "Picked Up";
-  btn.classList.add("pickup-btn");
-  btn.onclick = () => row.classList.add("hidden");
-  cell3.appendChild(btn);
-
-  document.getElementById("status").innerText = `✅ Scanned: ${decodedText}`;
-}
-
-// handle scan error
-function onScanError(err) { /* ignore minor errors */ }
-
-document.getElementById("enableSoundBtn").addEventListener("click", () => {
-  const test = new SpeechSynthesisUtterance("Sound enabled");
-  speechSynthesis.speak(test);
-  soundEnabled = true;
-  alert("🔊 Sound enabled! You can now scan barcodes.");
-});
-
-// initialize continuous scanner
-window.onload = () => {
-  const html5Qrcode = new Html5Qrcode("reader");
-  html5Qrcode.start(
-    { facingMode: "environment" },
-    { fps: 10, qrbox: 250 },
-    onScanSuccess,
-    onScanError
-  ).catch(err => console.error(err));
-};
-</script>
-
-</body>
-</html>
+  // Announce every scan
+  speakText(dec
