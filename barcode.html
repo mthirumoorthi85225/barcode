@@ -3,22 +3,23 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Barcode Scanner - 1 Minute Gap</title>
+  <title>Barcode Scanner - 1 Minute Cooldown per Code</title>
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
       text-align: center;
-      margin: 20px;
-      background-color: #f9f9f9;
+      background-color: #f7f7f7;
+      margin: 0;
+      padding: 20px;
     }
-    h2 {
-      margin-bottom: 10px;
+    #reader {
+      width: 320px;
+      margin: 20px auto;
     }
     #enableSoundBtn {
-      display: inline-block;
-      margin: 15px auto;
-      padding: 10px 18px;
+      margin: 10px;
+      padding: 10px 20px;
       font-size: 16px;
       background-color: #007bff;
       color: white;
@@ -29,24 +30,20 @@
     #enableSoundBtn:hover {
       background-color: #0056b3;
     }
-    #reader {
-      width: 300px;
-      margin: 15px auto;
-    }
     table {
       border-collapse: collapse;
       margin: 20px auto;
       width: 90%;
       max-width: 500px;
-      background-color: white;
+      background: white;
     }
     th, td {
-      border: 1px solid #aaa;
+      border: 1px solid #ccc;
       padding: 8px;
       text-align: center;
     }
     th {
-      background-color: #eee;
+      background-color: #f0f0f0;
     }
     .pickup-btn {
       background-color: #28a745;
@@ -63,28 +60,22 @@
       display: none;
     }
     #status {
+      margin-top: 10px;
       font-size: 14px;
       color: gray;
-      margin-top: 10px;
     }
   </style>
 </head>
 <body>
-  <h2>📷 Barcode Scanner - Pickup Ready</h2>
+  <h2>📦 Pickup Barcode Scanner</h2>
 
- 
-
-  <!-- Camera preview -->
-  <div id="reader"></div>
-
-   <!-- Enable sound button -->
   <button id="enableSoundBtn">🔊 Enable Sound</button>
-  <p style="font-size:13px;color:gray;margin-top:5px;">
-    Tap once to allow sound on iPhone, then start scanning
-  </p>
-  <p id="status">Ready to scan...</p>
+  <p style="font-size:13px;color:gray;">Tap once to allow sound (required on iPhone)</p>
 
-  <h3>📋 Scanned Names</h3>
+  <div id="reader"></div>
+  <p id="status">✅ Ready to scan...</p>
+
+  <h3>Scanned Names</h3>
   <table id="dataTable">
     <tr><th>#</th><th>Name</th><th>Action</th></tr>
   </table>
@@ -92,25 +83,34 @@
   <script>
     let scanCount = 0;
     let soundEnabled = false;
-    let scanner = null;
-    let isPaused = false;
+    let lastScanTimes = {}; // store timestamps per barcode text
 
     function speakText(name) {
       if (!soundEnabled || !name) return;
-      const message = `${name} pickup is ready`;
-      const utterance = new SpeechSynthesisUtterance(message);
-      utterance.lang = "en-US";
+      const msg = new SpeechSynthesisUtterance(`${name} pickup is ready`);
+      msg.lang = "en-US";
       speechSynthesis.cancel();
-      speechSynthesis.speak(utterance);
+      speechSynthesis.speak(msg);
     }
 
     function onScanSuccess(decodedText, decodedResult) {
-      if (isPaused) return;
+      const now = Date.now();
+      const lastTime = lastScanTimes[decodedText];
 
-      // Speak the name
+      // Ignore same barcode if scanned again within 1 minute
+      if (lastTime && now - lastTime < 60000) {
+        document.getElementById("status").innerText =
+          `⏳ '${decodedText}' scanned recently — waiting 1 min...`;
+        return;
+      }
+
+      // Record scan time
+      lastScanTimes[decodedText] = now;
+
+      // Speak name
       speakText(decodedText);
 
-      // Add name to table
+      // Add new row
       const table = document.getElementById("dataTable");
       const row = table.insertRow(-1);
       const cell1 = row.insertCell(0);
@@ -118,44 +118,4 @@
       const cell3 = row.insertCell(2);
 
       scanCount++;
-      cell1.innerHTML = scanCount;
-      cell2.innerHTML = decodedText;
-
-      const btn = document.createElement("button");
-      btn.textContent = "Picked Up";
-      btn.classList.add("pickup-btn");
-      btn.onclick = () => row.classList.add("hidden");
-      cell3.appendChild(btn);
-
-      // Stop scanning for 1 minute
-      isPaused = true;
-      document.getElementById("status").innerText = "⏸ Paused for 1 minute...";
-      scanner.clear().then(() => {
-        setTimeout(() => {
-          document.getElementById("status").innerText = "✅ Ready to scan again!";
-          scanner.render(onScanSuccess, onScanError);
-          isPaused = false;
-        }, 60000); // 60 seconds
-      });
-    }
-
-    function onScanError(errorMessage) {
-      console.log(errorMessage);
-    }
-
-    document.getElementById("enableSoundBtn").addEventListener("click", () => {
-      const test = new SpeechSynthesisUtterance("Sound enabled");
-      test.lang = "en-US";
-      speechSynthesis.speak(test);
-      soundEnabled = true;
-      alert("🔊 Sound enabled! You can now start scanning.");
-    });
-
-    // Initialize the barcode scanner
-    window.onload = function() {
-      scanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 });
-      scanner.render(onScanSuccess, onScanError);
-    };
-  </script>
-</body>
-</html>
+      cell1.
