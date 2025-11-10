@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Barcode Scanner - Pickup Ready (iPhone Fixed)</title>
+  <title>Barcode Scanner - 1 Minute Gap</title>
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <style>
     body {
@@ -62,6 +62,11 @@
     .hidden {
       display: none;
     }
+    #status {
+      font-size: 14px;
+      color: gray;
+      margin-top: 10px;
+    }
   </style>
 </head>
 <body>
@@ -71,12 +76,13 @@
 
   <!-- Camera preview -->
   <div id="reader"></div>
-  
-   <!-- Enable sound button (required for iPhone) -->
+
+   <!-- Enable sound button -->
   <button id="enableSoundBtn">🔊 Enable Sound</button>
   <p style="font-size:13px;color:gray;margin-top:5px;">
     Tap once to allow sound on iPhone, then start scanning
   </p>
+  <p id="status">Ready to scan...</p>
 
   <h3>📋 Scanned Names</h3>
   <table id="dataTable">
@@ -86,6 +92,8 @@
   <script>
     let scanCount = 0;
     let soundEnabled = false;
+    let scanner = null;
+    let isPaused = false;
 
     function speakText(name) {
       if (!soundEnabled || !name) return;
@@ -97,10 +105,12 @@
     }
 
     function onScanSuccess(decodedText, decodedResult) {
-      // Speak the name every time
+      if (isPaused) return;
+
+      // Speak the name
       speakText(decodedText);
 
-      // Add name to the table
+      // Add name to table
       const table = document.getElementById("dataTable");
       const row = table.insertRow(-1);
       const cell1 = row.insertCell(0);
@@ -115,8 +125,18 @@
       btn.textContent = "Picked Up";
       btn.classList.add("pickup-btn");
       btn.onclick = () => row.classList.add("hidden");
-
       cell3.appendChild(btn);
+
+      // Stop scanning for 1 minute
+      isPaused = true;
+      document.getElementById("status").innerText = "⏸ Paused for 1 minute...";
+      scanner.clear().then(() => {
+        setTimeout(() => {
+          document.getElementById("status").innerText = "✅ Ready to scan again!";
+          scanner.render(onScanSuccess, onScanError);
+          isPaused = false;
+        }, 60000); // 60 seconds
+      });
     }
 
     function onScanError(errorMessage) {
@@ -131,13 +151,10 @@
       alert("🔊 Sound enabled! You can now start scanning.");
     });
 
-    // Initialize the barcode scanner after DOM is ready
+    // Initialize the barcode scanner
     window.onload = function() {
-      const html5QrcodeScanner = new Html5QrcodeScanner(
-        "reader",
-        { fps: 10, qrbox: 250 }
-      );
-      html5QrcodeScanner.render(onScanSuccess, onScanError);
+      scanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 });
+      scanner.render(onScanSuccess, onScanError);
     };
   </script>
 </body>
