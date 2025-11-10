@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Barcode Scanner App with Speaker</title>
+  <title>Barcode Scanner - Pickup Ready</title>
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <style>
     body {
@@ -19,7 +19,7 @@
       border-collapse: collapse;
       margin: 20px auto;
       width: 90%;
-      max-width: 400px;
+      max-width: 500px;
     }
     th, td {
       border: 1px solid #aaa;
@@ -30,73 +30,72 @@
       margin-top: 10px;
     }
     button {
-      margin-top: 15px;
-      padding: 8px 16px;
+      padding: 6px 12px;
       border: none;
       border-radius: 6px;
-      background-color: #007bff;
-      color: white;
-      font-size: 14px;
       cursor: pointer;
+      font-size: 14px;
     }
-    button:hover {
-      background-color: #0056b3;
+    .pickup-btn {
+      background-color: #28a745;
+      color: white;
+    }
+    .pickup-btn:hover {
+      background-color: #1e7e34;
+    }
+    .hidden {
+      display: none;
     }
   </style>
 </head>
 <body>
-  <h2>📷 Barcode Scanner with Voice</h2>
+  <h2>📷 Barcode Scanner - Pickup Ready</h2>
 
   <!-- Camera preview -->
   <div id="reader"></div>
 
-  <h3>📋 Scanned Data</h3>
+  <h3>📋 Scanned Names</h3>
   <table id="dataTable">
-    <tr><th>#</th><th>Barcode Text</th></tr>
+    <tr><th>#</th><th>Name</th><th>Action</th></tr>
   </table>
 
-  <button onclick="speakLastScan()">🔊 Repeat Last Name</button>
-
   <script>
-    let lastScannedText = "";
+    let scanCount = 0;
 
-    function speakText(text) {
-      if (!text) return;
-      const utterance = new SpeechSynthesisUtterance(text);
+    function speakText(name) {
+      if (!name) return;
+      const message = `${name} pickup is ready`;
+      const utterance = new SpeechSynthesisUtterance(message);
       utterance.lang = "en-US";
       speechSynthesis.cancel(); // Stop any previous speech
       speechSynthesis.speak(utterance);
     }
 
     function onScanSuccess(decodedText, decodedResult) {
-      // Clear old records (keep header)
-      const table = document.getElementById("dataTable");
-      while (table.rows.length > 1) {
-        table.deleteRow(1);
-      }
+      // Announce every scan
+      speakText(decodedText);
 
-      // Insert the new scan result
+      // Add to the table
+      const table = document.getElementById("dataTable");
       const row = table.insertRow(-1);
       const cell1 = row.insertCell(0);
       const cell2 = row.insertCell(1);
-      cell1.innerHTML = 1;
+      const cell3 = row.insertCell(2);
+
+      scanCount++;
+      cell1.innerHTML = scanCount;
       cell2.innerHTML = decodedText;
 
-      // Store and speak the scanned text
-      lastScannedText = decodedText;
-      speakText(decodedText);
+      const btn = document.createElement("button");
+      btn.textContent = "Picked Up";
+      btn.classList.add("pickup-btn");
+      btn.onclick = () => row.classList.add("hidden");
+
+      cell3.appendChild(btn);
     }
 
     function onScanError(errorMessage) {
       console.log(errorMessage);
-    }
-
-    function speakLastScan() {
-      if (lastScannedText) {
-        speakText(lastScannedText);
-      } else {
-        alert("No name scanned yet!");
-      }
     }
 
     // Initialize the barcode scanner
