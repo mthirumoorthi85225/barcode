@@ -1,46 +1,44 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Continuous Barcode Scanner</title>
-  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-  <style>
-    body { font-family: Arial, sans-serif; text-align: center; background: #f7f7f7; margin: 0; padding: 20px; }
-    #reader { width: 320px; margin: 20px auto; }
-    table { border-collapse: collapse; margin: 20px auto; width: 90%; max-width: 500px; background: white; }
-    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
-    th { background-color: #f0f0f0; }
-    .pickup-btn { background-color: #28a745; color: white; padding: 5px 10px; border: none; border-radius: 5px; cursor: pointer; }
-    .pickup-btn:hover { background-color: #1e7e34; }
-    .hidden { display: none; }
-    #enableSoundBtn { margin: 10px; padding: 10px 20px; font-size: 16px; background-color: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; }
-    #enableSoundBtn:hover { background-color: #0056b3; }
-    #status { margin-top: 10px; font-size: 14px; color: gray; }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Continuous Barcode Scanner with Sound</title>
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+<style>
+body { font-family: Arial, sans-serif; text-align: center; background: #f7f7f7; margin: 20px; }
+#reader { width: 320px; margin: 20px auto; }
+table { border-collapse: collapse; margin: 20px auto; width: 90%; max-width: 500px; background: white; }
+th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+th { background-color: #f0f0f0; }
+.pickup-btn { background-color: #28a745; color: white; padding: 5px 10px; border: none; border-radius: 5px; cursor: pointer; }
+.pickup-btn:hover { background-color: #1e7e34; }
+.hidden { display: none; }
+#enableSoundBtn { margin: 10px; padding: 10px 20px; font-size: 16px; background-color: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; }
+#enableSoundBtn:hover { background-color: #0056b3; }
+#status { margin-top: 10px; font-size: 14px; color: gray; }
+</style>
 </head>
 <body>
 
 <h2>📦 Continuous Pickup Barcode Scanner</h2>
 
-
+<button id="enableSoundBtn">🔊 Enable Sound</button>
+<p style="font-size:13px;color:gray;">Tap once to allow sound (required on iPhone)</p>
 
 <div id="reader"></div>
 <p id="status">✅ Ready to scan...</p>
 
-  <button id="enableSoundBtn">🔊 Enable Sound</button>
-<p style="font-size:13px;color:gray;">Tap once to allow sound (required on iPhone)</p>
-
 <h3>Scanned Names</h3>
 <table id="dataTable">
-  <tr><th>#</th><th>Name</th><th>Action</th></tr>
+<tr><th>#</th><th>Name</th><th>Action</th></tr>
 </table>
 
 <script>
 let scanCount = 0;
 let soundEnabled = false;
 
-// speak aloud
+// Speak aloud
 function speakText(name) {
   if (!soundEnabled) return;
   const msg = new SpeechSynthesisUtterance(`${name} pickup is ready`);
@@ -49,8 +47,54 @@ function speakText(name) {
   speechSynthesis.speak(msg);
 }
 
-// handle scan
+// Handle scan
 function onScanSuccess(decodedText) {
   // Announce every scan
-  speakText(dec
+  speakText(decodedText);
 
+  // Add to table
+  const table = document.getElementById("dataTable");
+  const row = table.insertRow(-1);
+  const cell1 = row.insertCell(0);
+  const cell2 = row.insertCell(1);
+  const cell3 = row.insertCell(2);
+
+  scanCount++;
+  cell1.innerText = scanCount;
+  cell2.innerText = decodedText;
+
+  const btn = document.createElement("button");
+  btn.textContent = "Picked Up";
+  btn.classList.add("pickup-btn");
+  btn.onclick = () => row.classList.add("hidden");
+  cell3.appendChild(btn);
+
+  document.getElementById("status").innerText = `✅ Scanned: ${decodedText}`;
+}
+
+// Handle scan error
+function onScanError(err) { /* ignore minor errors */ }
+
+// Enable sound button for iPhone
+document.getElementById("enableSoundBtn").addEventListener("click", () => {
+  // This tap allows the browser to unlock speech synthesis
+  const test = new SpeechSynthesisUtterance("Sound enabled");
+  speechSynthesis.speak(test);
+  soundEnabled = true;
+  alert("🔊 Sound enabled! You can now scan barcodes.");
+});
+
+// Initialize continuous scanner
+window.onload = () => {
+  const html5Qrcode = new Html5Qrcode("reader");
+  html5Qrcode.start(
+    { facingMode: "environment" },
+    { fps: 10, qrbox: 250 },
+    onScanSuccess,
+    onScanError
+  ).catch(err => console.error(err));
+};
+</script>
+
+</body>
+</html>
