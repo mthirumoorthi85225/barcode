@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Barcode Scanner - Pickup Ready</title>
+  <title>Barcode Scanner - Pickup Ready (iPhone Fix)</title>
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <style>
     body {
@@ -46,10 +46,21 @@
     .hidden {
       display: none;
     }
+    #enableSoundBtn {
+      background-color: #007bff;
+      color: white;
+      margin-top: 10px;
+    }
+    #enableSoundBtn:hover {
+      background-color: #0056b3;
+    }
   </style>
 </head>
 <body>
   <h2>📷 Barcode Scanner - Pickup Ready</h2>
+
+  <button id="enableSoundBtn">🔊 Enable Sound</button>
+  <p style="font-size:13px;color:gray;">(Tap once before scanning on iPhone)</p>
 
   <!-- Camera preview -->
   <div id="reader"></div>
@@ -61,18 +72,19 @@
 
   <script>
     let scanCount = 0;
+    let soundEnabled = false;
 
     function speakText(name) {
-      if (!name) return;
+      if (!soundEnabled) return; // prevent blocked audio
       const message = `${name} pickup is ready`;
       const utterance = new SpeechSynthesisUtterance(message);
       utterance.lang = "en-US";
-      speechSynthesis.cancel(); // Stop any previous speech
+      speechSynthesis.cancel();
       speechSynthesis.speak(utterance);
     }
 
     function onScanSuccess(decodedText, decodedResult) {
-      // Announce every scan
+      // Speak name
       speakText(decodedText);
 
       // Add to the table
@@ -98,12 +110,8 @@
       console.log(errorMessage);
     }
 
-    // Initialize the barcode scanner
-    const html5QrcodeScanner = new Html5QrcodeScanner(
-      "reader",
-      { fps: 10, qrbox: 250 }
-    );
-    html5QrcodeScanner.render(onScanSuccess, onScanError);
-  </script>
-</body>
-</html>
+    document.getElementById("enableSoundBtn").addEventListener("click", () => {
+      // User-initiated event to enable speech
+      const test = new SpeechSynthesisUtterance("Sound enabled");
+      test.lang = "en-US";
+      spe
