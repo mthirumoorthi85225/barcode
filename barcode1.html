@@ -42,7 +42,6 @@ function speakText(name) {
   speechSynthesis.cancel();
   speechSynthesis.speak(msg);
 }
-
 document.getElementById("enableSoundBtn").addEventListener("click", () => {
   const test = new SpeechSynthesisUtterance("Sound enabled");
   speechSynthesis.speak(test);
