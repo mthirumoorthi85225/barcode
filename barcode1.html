@@ -3,45 +3,45 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Barcode Scanner with Sound</title>
+<title>QR Code Scanner with Picked-Up</title>
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 <style>
 body { font-family: Arial, sans-serif; text-align: center; background: #f7f7f7; margin: 20px; }
-table { border-collapse: collapse; margin: 20px auto; width: 90%; max-width: 500px; background: white; }
+#reader { width: 320px; margin: 20px auto; }
+input { padding: 8px; margin: 5px; width: 200px; }
+table { border-collapse: collapse; margin: 20px auto; width: 90%; max-width: 600px; background: white; }
 th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
 th { background-color: #f0f0f0; }
+img { width: 50px; height: 50px; object-fit: cover; border-radius: 5px; }
 .pickup-btn { background-color: #28a745; color: white; padding: 5px 10px; border: none; border-radius: 5px; cursor: pointer; }
 .pickup-btn:hover { background-color: #1e7e34; }
-.hidden { display: none; }
-#enableSoundBtn { margin: 10px; padding: 10px 20px; font-size: 16px; background-color: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; }
-#enableSoundBtn:hover { background-color: #0056b3; }
-#barcodeInput { width: 300px; padding: 10px; font-size: 16px; }
 </style>
 </head>
 <body>
 
-<h2>📦 Barcode Pickup Scanner</h2>
+<h2>📦 QR Code Scanner (JSON)</h2>
+<div id="reader"></div>
 
-<button id="enableSoundBtn" class="hidden">🔊 Enable Sound</button>
-<p id="soundNote" style="font-size:13px;color:gray;"></p>
+<p>
+<input id="nameInput" placeholder="Name" readonly />
+<input id="gradeInput" placeholder="Grade" readonly />
+</p>
 
-<input id="barcodeInput" placeholder="Scan barcode here..." autofocus />
-
-<h3>Scanned Names</h3>
+<h3>Scanned Students</h3>
 <table id="dataTable">
-<tr><th>#</th><th>Name</th><th>Action</th></tr>
+<tr><th>#</th><th>Name</th><th>Grade</th><th>Image</th><th>Action</th></tr>
 </table>
 
-<h3>✅ Picked-Up Names</h3>
+<h3>✅ Picked-Up Students</h3>
 <table id="pickedUpTable">
-<tr><th>#</th><th>Name</th><th>Status</th></tr>
+<tr><th>#</th><th>Name</th><th>Grade</th><th>Image</th><th>Status</th></tr>
 </table>
 
 <script>
 let scanCount = 0;
 let pickupCount = 0;
-let soundEnabled = false;
+let soundEnabled = true; // Enabled by default
 
-// Speech helper
 function speakText(text) {
   if (!soundEnabled) return;
   const msg = new SpeechSynthesisUtterance(text);
@@ -50,79 +50,81 @@ function speakText(text) {
   speechSynthesis.speak(msg);
 }
 
-// Detect if iPhone/iPad (Safari)
-function isIOS() {
-  return /iPad|iPhone|iPod/.test(navigator.userAgent);
+// Handle QR scan
+function onScanSuccess(decodedText) {
+    try {
+        const data = JSON.parse(decodedText);
+        const name = data.name || "";
+        const grade = data.grade || "";
+        const image = data.image || "";
+
+        // Show in input boxes
+        document.getElementById("nameInput").value = name;
+        document.getElementById("gradeInput").value = grade;
+
+        // Add to table
+        scanCount++;
+        const table = document.getElementById("dataTable");
+        const row = table.insertRow(-1);
+
+        const cell1 = row.insertCell(0);
+        const cell2 = row.insertCell(1);
+        const cell3 = row.insertCell(2);
+        const cell4 = row.insertCell(3);
+        const cell5 = row.insertCell(4);
+
+        cell1.innerText = scanCount;
+        cell2.innerText = name;
+        cell3.innerText = grade;
+        const img = document.createElement("img");
+        img.src = image;
+        cell4.appendChild(img);
+
+        const btn = document.createElement("button");
+        btn.textContent = "Picked Up";
+        btn.classList.add("pickup-btn");
+        btn.onclick = () => {
+            row.classList.add("hidden");
+            speakText(`${name} got picked up`);
+
+            // Move to Picked-Up table
+            pickupCount++;
+            const pickedTable = document.getElementById("pickedUpTable");
+            const pickedRow = pickedTable.insertRow(-1);
+
+            const p1 = pickedRow.insertCell(0);
+            const p2 = pickedRow.insertCell(1);
+            const p3 = pickedRow.insertCell(2);
+            const p4 = pickedRow.insertCell(3);
+            const p5 = pickedRow.insertCell(4);
+
+            p1.innerText = pickupCount;
+            p2.innerText = name;
+            p3.innerText = grade;
+            const img2 = document.createElement("img");
+            img2.src = image;
+            p4.appendChild(img2);
+            p5.innerText = "Picked Up ✅";
+        };
+        cell5.appendChild(btn);
+
+    } catch (err) {
+        console.error("Invalid JSON:", err);
+        alert("Scanned QR code does not contain valid JSON");
+    }
 }
 
-// Enable sound automatically (if allowed)
-window.addEventListener("load", () => {
-  const btn = document.getElementById("enableSoundBtn");
-  const note = document.getElementById("soundNote");
+function onScanError(errorMessage) { /* ignore */ }
 
-  if (isIOS()) {
-    // Safari needs user tap
-    btn.classList.remove("hidden");
-    note.innerText = "🔇 Tap 'Enable Sound' once to allow speech (required by iPhone/iPad Safari).";
-  } else {
-    // Auto-enable sound for Chrome, Edge, etc.
-    soundEnabled = true;
-    note.innerText = "🔊 Sound enabled automatically.";
-  }
-});
-
-// Manual sound unlock for iPhone/iPad
-document.getElementById("enableSoundBtn").addEventListener("click", () => {
-  const test = new SpeechSynthesisUtterance("Sound enabled");
-  speechSynthesis.speak(test);
-  soundEnabled = true;
-  alert("🔊 Sound enabled! You can now scan barcodes and hear names.");
-});
-
-// Handle barcode scanning
-const input = document.getElementById("barcodeInput");
-input.addEventListener("keypress", function (e) {
-  if (e.key === "Enter") {
-    const value = input.value.trim();
-    if (value !== "") {
-      scanCount++;
-      speakText(`${value} pickup is ready`);
-
-      const table = document.getElementById("dataTable");
-      const row = table.insertRow(-1);
-      const cell1 = row.insertCell(0);
-      const cell2 = row.insertCell(1);
-      const cell3 = row.insertCell(2);
-
-      cell1.innerText = scanCount;
-      cell2.innerText = value;
-
-      const btn = document.createElement("button");
-      btn.textContent = "Picked Up";
-      btn.classList.add("pickup-btn");
-
-      // Speak & move to Picked-Up table
-      btn.onclick = () => {
-        row.classList.add("hidden");
-        speakText(`${value} got picked up`);
-
-        pickupCount++;
-        const pickedTable = document.getElementById("pickedUpTable");
-        const pickedRow = pickedTable.insertRow(-1);
-        const p1 = pickedRow.insertCell(0);
-        const p2 = pickedRow.insertCell(1);
-        const p3 = pickedRow.insertCell(2);
-
-        p1.innerText = pickupCount;
-        p2.innerText = value;
-        p3.innerText = "Picked Up ✅";
-      };
-      cell3.appendChild(btn);
-
-      input.value = "";
-    }
-  }
-});
+window.onload = () => {
+    const html5QrcodeScanner = new Html5Qrcode("reader");
+    html5QrcodeScanner.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: 250 },
+        onScanSuccess,
+        onScanError
+    ).catch(err => console.error("Unable to start scanner:", err));
+};
 </script>
 
 </body>
