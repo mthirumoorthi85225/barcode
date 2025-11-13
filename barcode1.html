@@ -35,27 +35,31 @@ th { background-color: #f0f0f0; }
 let scanCount = 0;
 let soundEnabled = false;
 
-function speakText(name) {
+// Speak helper
+function speakText(text) {
   if (!soundEnabled) return;
-  const msg = new SpeechSynthesisUtterance(`${name} pickup is ready`);
+  const msg = new SpeechSynthesisUtterance(text);
   msg.lang = "en-US";
   speechSynthesis.cancel();
   speechSynthesis.speak(msg);
 }
+
+// Enable sound
 document.getElementById("enableSoundBtn").addEventListener("click", () => {
   const test = new SpeechSynthesisUtterance("Sound enabled");
   speechSynthesis.speak(test);
   soundEnabled = true;
-  alert("🔊 Sound enabled! You can now scan barcodes.");
+  alert("🔊 Sound enabled! You can now scan barcodes and hear names.");
 });
 
+// Handle barcode input
 const input = document.getElementById("barcodeInput");
 input.addEventListener("keypress", function (e) {
   if (e.key === "Enter") {
     const value = input.value.trim();
     if (value !== "") {
       scanCount++;
-      speakText(value);
+      speakText(`${value} pickup is ready`);
 
       const table = document.getElementById("dataTable");
       const row = table.insertRow(-1);
@@ -65,10 +69,15 @@ input.addEventListener("keypress", function (e) {
 
       cell1.innerText = scanCount;
       cell2.innerText = value;
+
       const btn = document.createElement("button");
       btn.textContent = "Picked Up";
       btn.classList.add("pickup-btn");
-      btn.onclick = () => row.classList.add("hidden");
+      // 🔊 NEW: speak when clicked
+      btn.onclick = () => {
+        row.classList.add("hidden");
+        speakText(`${value} got picked up`);
+      };
       cell3.appendChild(btn);
 
       input.value = "";
