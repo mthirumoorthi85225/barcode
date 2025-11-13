@@ -21,8 +21,8 @@ th { background-color: #f0f0f0; }
 
 <h2>📦 Barcode Pickup Scanner</h2>
 
-<button id="enableSoundBtn">🔊 Enable Sound</button>
-<p style="font-size:13px;color:gray;">Tap once to allow sound (required on iPhone)</p>
+<button id="enableSoundBtn" class="hidden">🔊 Enable Sound</button>
+<p id="soundNote" style="font-size:13px;color:gray;"></p>
 
 <input id="barcodeInput" placeholder="Scan barcode here..." autofocus />
 
@@ -41,7 +41,7 @@ let scanCount = 0;
 let pickupCount = 0;
 let soundEnabled = false;
 
-// Speak helper
+// Speech helper
 function speakText(text) {
   if (!soundEnabled) return;
   const msg = new SpeechSynthesisUtterance(text);
@@ -50,7 +50,28 @@ function speakText(text) {
   speechSynthesis.speak(msg);
 }
 
-// Enable sound
+// Detect if iPhone/iPad (Safari)
+function isIOS() {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent);
+}
+
+// Enable sound automatically (if allowed)
+window.addEventListener("load", () => {
+  const btn = document.getElementById("enableSoundBtn");
+  const note = document.getElementById("soundNote");
+
+  if (isIOS()) {
+    // Safari needs user tap
+    btn.classList.remove("hidden");
+    note.innerText = "🔇 Tap 'Enable Sound' once to allow speech (required by iPhone/iPad Safari).";
+  } else {
+    // Auto-enable sound for Chrome, Edge, etc.
+    soundEnabled = true;
+    note.innerText = "🔊 Sound enabled automatically.";
+  }
+});
+
+// Manual sound unlock for iPhone/iPad
 document.getElementById("enableSoundBtn").addEventListener("click", () => {
   const test = new SpeechSynthesisUtterance("Sound enabled");
   speechSynthesis.speak(test);
@@ -58,7 +79,7 @@ document.getElementById("enableSoundBtn").addEventListener("click", () => {
   alert("🔊 Sound enabled! You can now scan barcodes and hear names.");
 });
 
-// Handle barcode input
+// Handle barcode scanning
 const input = document.getElementById("barcodeInput");
 input.addEventListener("keypress", function (e) {
   if (e.key === "Enter") {
@@ -80,7 +101,7 @@ input.addEventListener("keypress", function (e) {
       btn.textContent = "Picked Up";
       btn.classList.add("pickup-btn");
 
-      // 🔊 NEW: speak & move to Picked-Up table
+      // Speak & move to Picked-Up table
       btn.onclick = () => {
         row.classList.add("hidden");
         speakText(`${value} got picked up`);
