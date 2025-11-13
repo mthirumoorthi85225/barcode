@@ -31,8 +31,14 @@ th { background-color: #f0f0f0; }
 <tr><th>#</th><th>Name</th><th>Action</th></tr>
 </table>
 
+<h3>✅ Picked-Up Names</h3>
+<table id="pickedUpTable">
+<tr><th>#</th><th>Name</th><th>Status</th></tr>
+</table>
+
 <script>
 let scanCount = 0;
+let pickupCount = 0;
 let soundEnabled = false;
 
 // Speak helper
@@ -73,10 +79,22 @@ input.addEventListener("keypress", function (e) {
       const btn = document.createElement("button");
       btn.textContent = "Picked Up";
       btn.classList.add("pickup-btn");
-      // 🔊 NEW: speak when clicked
+
+      // 🔊 NEW: speak & move to Picked-Up table
       btn.onclick = () => {
         row.classList.add("hidden");
         speakText(`${value} got picked up`);
+
+        pickupCount++;
+        const pickedTable = document.getElementById("pickedUpTable");
+        const pickedRow = pickedTable.insertRow(-1);
+        const p1 = pickedRow.insertCell(0);
+        const p2 = pickedRow.insertCell(1);
+        const p3 = pickedRow.insertCell(2);
+
+        p1.innerText = pickupCount;
+        p2.innerText = value;
+        p3.innerText = "Picked Up ✅";
       };
       cell3.appendChild(btn);
 
