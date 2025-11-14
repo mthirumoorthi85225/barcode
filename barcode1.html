@@ -3,22 +3,24 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>QR Code Scanner with Sound (Physical Scanner)</title>
+<title>QR Code Scanner with Pickup Person Photo</title>
+
 <style>
 body { font-family: Arial, sans-serif; text-align: center; background: #f7f7f7; margin: 20px; }
 input { padding: 8px; margin: 5px; width: 300px; }
-table { border-collapse: collapse; margin: 20px auto; width: 90%; max-width: 600px; background: white; }
+table { border-collapse: collapse; margin: 20px auto; width: 95%; max-width: 900px; background: white; }
 th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
 th { background-color: #f0f0f0; }
-img { width: 50px; height: 50px; object-fit: cover; border-radius: 5px; }
+img { width: 60px; height: 60px; object-fit: cover; border-radius: 6px; }
 .pickup-btn { background-color: #28a745; color: white; padding: 5px 10px; border: none; border-radius: 5px; cursor: pointer; }
 .pickup-btn:hover { background-color: #1e7e34; }
-#scannerInput { opacity:0; position:absolute; left:-1000px; } /* hidden but focused */
+.hidden { display: none; }
+#scannerInput { opacity:0; position:absolute; left:-1000px; }
 </style>
 </head>
 <body>
 
-<h2>📦 QR Code Scanner (Physical Scanner)</h2>
+<h2>📦 QR Code Pickup Scanner (With Pickup Person Photo)</h2>
 
 <button id="enableSoundBtn">🔊 Enable Sound</button>
 
@@ -32,28 +34,40 @@ img { width: 50px; height: 50px; object-fit: cover; border-radius: 5px; }
 
 <h3>Scanned Students</h3>
 <table id="dataTable">
-<tr><th>#</th><th>Name</th><th>Grade</th><th>Image</th><th>Action</th></tr>
+<tr>
+<th>#</th>
+<th>Name</th>
+<th>Grade</th>
+<th>Student Image</th>
+<th>Pickup Person Image</th>
+<th>Action</th>
+</tr>
 </table>
 
 <h3>✅ Picked-Up Students</h3>
 <table id="pickedUpTable">
-<tr><th>#</th><th>Name</th><th>Grade</th><th>Image</th><th>Status</th></tr>
+<tr>
+<th>#</th>
+<th>Name</th>
+<th>Grade</th>
+<th>Student Image</th>
+<th>Pickup Person Image</th>
+<th>Status</th>
+</tr>
 </table>
 
 <script>
 let scanCount = 0;
 let pickupCount = 0;
-let soundEnabled = true; // enabled by default
+let soundEnabled = true; 
 
-// Enable sound button (for iPhone)
 document.getElementById("enableSoundBtn").addEventListener("click", () => {
     const test = new SpeechSynthesisUtterance("Sound enabled");
     speechSynthesis.speak(test);
     soundEnabled = true;
-    alert("🔊 Sound enabled! Scanner will now speak names.");
+    alert("Sound enabled!");
 });
 
-// Speak helper
 function speakText(text) {
     if (!soundEnabled) return;
     const msg = new SpeechSynthesisUtterance(text);
@@ -62,9 +76,9 @@ function speakText(text) {
     speechSynthesis.speak(msg);
 }
 
-// Handle scanner input
 const scannerInput = document.getElementById("scannerInput");
 scannerInput.focus();
+
 scannerInput.addEventListener("keypress", function(e) {
     if (e.key === "Enter") {
         const value = scannerInput.value.trim();
@@ -75,9 +89,9 @@ scannerInput.addEventListener("keypress", function(e) {
             const data = JSON.parse(value);
             const name = data.name || "";
             const grade = data.grade || "";
-            const image = data.image || "";
+            const studentImage = data.studentImage || data.image || "";
+            const pickupImage = data.pickupImage || "";
 
-            // Show in inputs
             document.getElementById("nameInput").value = name;
             document.getElementById("gradeInput").value = grade;
 
@@ -85,46 +99,68 @@ scannerInput.addEventListener("keypress", function(e) {
             scanCount++;
             const table = document.getElementById("dataTable");
             const row = table.insertRow(-1);
+
             row.insertCell(0).innerText = scanCount;
             row.insertCell(1).innerText = name;
             row.insertCell(2).innerText = grade;
-            const imgCell = row.insertCell(3);
-            const img = document.createElement("img");
-            img.src = image;
-            imgCell.appendChild(img);
-            const actionCell = row.insertCell(4);
+
+            // Student Image
+            const imgCell1 = row.insertCell(3);
+            const img1 = document.createElement("img");
+            img1.src = studentImage;
+            imgCell1.appendChild(img1);
+
+            // Pickup Person Image
+            const imgCell2 = row.insertCell(4);
+            const img2 = document.createElement("img");
+            img2.src = pickupImage;
+            imgCell2.appendChild(img2);
+
+            // Action button
+            const actionCell = row.insertCell(5);
             const btn = document.createElement("button");
             btn.textContent = "Picked Up";
             btn.classList.add("pickup-btn");
+
             btn.onclick = () => {
                 row.classList.add("hidden");
                 speakText(`${name} got picked up`);
 
-                // Move to picked-up table
                 pickupCount++;
                 const pickedTable = document.getElementById("pickedUpTable");
                 const r = pickedTable.insertRow(-1);
+
                 r.insertCell(0).innerText = pickupCount;
                 r.insertCell(1).innerText = name;
                 r.insertCell(2).innerText = grade;
-                const img2Cell = r.insertCell(3);
-                const img2 = document.createElement("img");
-                img2.src = image;
-                img2Cell.appendChild(img2);
-                r.insertCell(4).innerText = "Picked Up ✅";
+
+                // Student Image
+                const pImg1 = document.createElement("img");
+                const pImgCell1 = r.insertCell(3);
+                pImg1.src = studentImage;
+                pImgCell1.appendChild(pImg1);
+
+                // Pickup Person Image
+                const pImg2 = document.createElement("img");
+                const pImgCell2 = r.insertCell(4);
+                pImg2.src = pickupImage;
+                pImgCell2.appendChild(pImg2);
+
+                r.insertCell(5).innerText = "Picked Up ✅";
             };
+
             actionCell.appendChild(btn);
 
-            // Speak
             speakText(`${name} pickup is ready`);
+
         } catch (err) {
-            console.error("Invalid JSON:", err);
-            alert("Scanned QR code does not contain valid JSON!");
+            alert("Invalid JSON scanned!");
+            console.error(err);
         }
     }
 });
 
-// Keep focus on hidden input
+// Keep scanner focused
 document.body.addEventListener("click", () => scannerInput.focus());
 </script>
 
