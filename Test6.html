@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Excel Viewer</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        table { border-collapse: collapse; width: 100%; }
+        table, th, td { border: 1px solid #444; }
+        th, td { padding: 8px; text-align: left; }
+        th { background-color: #f0f0f0; }
+    </style>
+</head>
+<body>
+
+<h2>Daily Routine Excel Viewer</h2>
+
+<input type="hidden" id="excelURL" value="https://raw.githubusercontent.com/mthirumoorthi85225/barcode/main/Daily%20Routine.xlsx">
+
+<div id="excelData">Loading Excel file...</div>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+<script>
+async function loadExcel() {
+    try {
+        const url = document.getElementById("excelURL").value;
+
+        const response = await fetch(url);
+        if (!response.ok) {
+            document.getElementById("excelData").innerHTML =
+                "Error loading file. Make sure the file is public.";
+            return;
+        }
+
+        const arrayBuffer = await response.arrayBuffer();
+        const workbook = XLSX.read(arrayBuffer, { type: "array" });
+
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const html = XLSX.utils.sheet_to_html(sheet);
+
+        document.getElementById("excelData").innerHTML = html;
+
+    } catch (error) {
+        document.getElementById("excelData").innerHTML =
+            "Failed to load Excel: " + error;
+    }
+}
+
+loadExcel();
+</script>
+
+</body>
+</html>
